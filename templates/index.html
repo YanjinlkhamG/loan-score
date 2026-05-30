@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Зээлийн Скоринг</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0b0f1a;
+      --surface:   #111827;
+      --surface2:  #1a2236;
+      --border:    #1e2d45;
+      --accent:    #3b82f6;
+      --accent2:   #60a5fa;
+      --green:     #10b981;
+      --yellow:    #f59e0b;
+      --red:       #ef4444;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --font:      'Outfit', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    /* Subtle grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 900px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -.02em;
+      margin-bottom: .5rem;
+    }
+    .brand svg { -webkit-text-fill-color: initial; }
+    header p {
+      color: var(--muted);
+      font-size: .95rem;
+      font-weight: 400;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.25rem;
+      padding: 2.5rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+
+    /* Form grid */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+    @media (max-width: 580px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: .45rem; }
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: .82rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    label span { color: var(--accent); margin-left: .2rem; }
+
+    input, select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: .6rem;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 1rem;
+      padding: .75rem 1rem;
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+    }
+    input::placeholder { color: var(--muted); font-size: .9rem; }
+    select option { background: var(--surface2); }
+
+    /* Hint text */
+    .hint { font-size: .78rem; color: var(--muted); margin-top: .2rem; }
+
+    /* Submit button */
+    .btn {
+      width: 100%;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+      border: none;
+      border-radius: .75rem;
+      color: #fff;
+      font-family: var(--font);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      letter-spacing: .03em;
+    }
+    .btn:hover  { opacity: .9; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    /* Result panel */
+    #result { display: none; }
+    #result.show { display: block; animation: fadeUp .4s ease; }
+    @keyframes fadeUp {
+      from { opacity:0; transform: translateY(12px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    .result-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.75rem;
+    }
+
+    /* Score gauge */
+    .gauge-wrap { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+    .gauge-svg { transform: rotate(-90deg); }
+    .gauge-track { fill: none; stroke: var(--surface2); stroke-width: 10; }
+    .gauge-fill  {
+      fill: none;
+      stroke-width: 10;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),
+                  stroke .4s ease;
+    }
+    .gauge-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .1rem;
+    }
+    .gauge-number {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .gauge-label { font-size: .7rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+
+    /* Verdict badge */
+    .verdict {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+    .verdict-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 1.1rem;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      width: fit-content;
+    }
+    .verdict-badge.approved { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+    .verdict-badge.manual   { background: rgba(245,158,11,.15);  color: var(--yellow); border: 1px solid rgba(245,158,11,.3); }
+    .verdict-badge.rejected { background: rgba(239,68,68,.15);   color: var(--red);    border: 1px solid rgba(239,68,68,.3); }
+
+    .verdict-desc { font-size: .9rem; color: var(--muted); }
+    .verdict-ratio { font-size: .85rem; color: var(--muted); }
+    .verdict-ratio strong { color: var(--text); }
+
+    /* Probability bars */
+    .prob-section h3 {
+      font-size: .82rem;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: .9rem;
+      font-weight: 600;
+    }
+    .prob-bars { display: flex; flex-direction: column; gap: .65rem; }
+    .prob-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 45px;
+      align-items: center;
+      gap: .75rem;
+    }
+    .prob-name { font-size: .875rem; color: var(--text); font-weight: 500; }
+    .prob-track {
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .prob-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 1s cubic-bezier(.4,0,.2,1);
+      width: 0%;
+    }
+    .prob-bar.approved { background: linear-gradient(90deg, #10b981, #34d399); }
+    .prob-bar.manual   { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .prob-bar.rejected { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .prob-pct { font-size: .85rem; color: var(--muted); text-align: right; font-weight: 500; }
+
+    /* Score legend */
+    .legend {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .legend-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+
+    /* Error */
+    .error-box {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.3);
+      color: #fca5a5;
+      border-radius: .6rem;
+      padding: .8rem 1rem;
+      font-size: .9rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .error-box.show { display: block; }
+
+    /* Loading spinner */
+    .spinner {
+      display: none;
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      margin: 0 auto;
+    }
+    .btn.loading .btn-text { display: none; }
+    .btn.loading .spinner  { display: block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="brand">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="8" fill="url(#grad)"/>
+        <path d="M8 18l4-5 3 3 5-7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="grad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3b82f6"/>
+            <stop offset="1" stop-color="#8b5cf6"/>
+          </linearGradient>
+        </defs>
+      </svg>
+      ЗээлСкор
+    </div>
+    <p>Хиймэл оюун ухаанд суурилсан зээлийн эрсдэл үнэлгээ</p>
+  </header>
+
+  <div class="card">
+    <form id="scoreForm">
+      <div class="form-grid">
+
+        <div class="field">
+          <label>Сарын цалин <span>*</span></label>
+          <input type="number" name="monthly_income" id="monthly_income"
+                 placeholder="1,500,000" min="1" required />
+          <div class="hint">₮ — Монгол төгрөгөөр</div>
+        </div>
+
+        <div class="field">
+          <label>Ажилласан жил <span>*</span></label>
+          <input type="number" name="employment_years" id="employment_years"
+                 placeholder="5" min="0" max="50" step="0.5" required />
+          <div class="hint">Жилийн тоо (0.5 нь 6 сар)</div>
+        </div>
+
+        <div class="field">
+          <label>Хүссэн зээлийн дүн <span>*</span></label>
+          <input type="number" name="requested_amount" id="requested_amount"
+                 placeholder="20,000,000" min="1" required />
+          <div class="hint">₮ — Монгол төгрөгөөр</div>
+        </div>
+
+        <div class="field">
+          <label>Мэргэжил / Ажлын төрөл <span>*</span></label>
+          <select name="employment_type" id="employment_type" required>
+            <option value="" disabled selected>— Сонгоно уу —</option>
+            {% for et in employment_types %}
+            <option value="{{ et }}">{{ et }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">
+        <span class="btn-text">Скор тооцоолох →</span>
+        <div class="spinner"></div>
+      </button>
+
+      <div class="error-box" id="errorBox"></div>
+    </form>
+
+    <hr class="divider" />
+
+    <!-- Result -->
+    <div id="result">
+      <div class="result-top">
+        <!-- Gauge -->
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" width="140" height="140" viewBox="0 0 140 140">
+            <circle class="gauge-track" cx="70" cy="70" r="55"/>
+            <circle class="gauge-fill" id="gaugeFill" cx="70" cy="70" r="55"
+                    stroke-dasharray="345.4" stroke-dashoffset="345.4"/>
+          </svg>
+          <div class="gauge-text">
+            <span class="gauge-number" id="scoreNum">—</span>
+            <span class="gauge-label">/ 1000</span>
+          </div>
+        </div>
+
+        <!-- Verdict -->
+        <div class="verdict">
+          <div class="verdict-badge" id="verdictBadge">
+            <span id="verdictIcon">●</span>
+            <span id="verdictText">—</span>
+          </div>
+          <div class="verdict-desc" id="verdictDesc"></div>
+          <div class="verdict-ratio" id="verdictRatio"></div>
+        </div>
+      </div>
+
+      <!-- Probability bars -->
+      <div class="prob-section">
+        <h3>Магадлалын задаргаа</h3>
+        <div class="prob-bars">
+          <div class="prob-row">
+            <span class="prob-name">✓ Зөвшөөрөх</span>
+            <div class="prob-track"><div class="prob-bar approved" id="barApproved"></div></div>
+            <span class="prob-pct" id="pctApproved">0%</span>
+          </div>
+          <div class="prob-row">
+            <span class="prob-name">⟳ Гар шалгалт</span>
+            <div class="prob-track"><div class="prob-bar manual" id="barManual"></div></div>
+            <span class="prob-pct" id="pctManual">0%</span>
+          </div>
+          <div class="prob-row">
+            <span class="prob-name">✕ Татгалзах</span>
+            <div class="prob-track"><div class="prob-bar rejected" id="barRejected"></div></div>
+            <span class="prob-pct" id="pctRejected">0%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>700–1000 Зөвшөөрөх</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>450–699 Гар шалгалт</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>0–449 Татгалзах</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CIRCUMFERENCE = 2 * Math.PI * 55; // ≈ 345.4
+
+const form     = document.getElementById('scoreForm');
+const btn      = document.getElementById('submitBtn');
+const errorBox = document.getElementById('errorBox');
+const result   = document.getElementById('result');
+
+const VERDICTS = {
+  approved: {
+    desc:  'Зээлдэгч тогтвортой орлого, туршлагатай бөгөөд зээл олгохыг дэмжиж байна.',
+    icon:  '✓'
+  },
+  manual: {
+    desc:  'Зарим үзүүлэлт тодорхойгүй байна. Дэлгэрэнгүй баримт шалгах шаардлагатай.',
+    icon:  '⟳'
+  },
+  rejected: {
+    desc:  'Санхүүгийн эрсдэл өндөр байна. Зээл олгохыг тогтоогдоогүй байна.',
+    icon:  '✕'
+  }
+};
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  errorBox.classList.remove('show');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('/predict', {
+      method: 'POST',
+      body: new FormData(form)
+    });
+    const json = await resp.json();
+
+    if (json.error) {
+      errorBox.textContent = json.error;
+      errorBox.classList.add('show');
+      return;
+    }
+
+    showResult(json);
+  } catch (err) {
+    errorBox.textContent = 'Холболтын алдаа гарлаа. Дахин оролдоно уу.';
+    errorBox.classList.add('show');
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+});
+
+function showResult(d) {
+  const { score, verdict, verdict_mn, proba, ratio } = d;
+  const colorMap = { approved: 'var(--green)', manual: 'var(--yellow)', rejected: 'var(--red)' };
+  const color = colorMap[verdict];
+
+  // Gauge
+  const fill = document.getElementById('gaugeFill');
+  fill.style.stroke = color;
+  const offset = CIRCUMFERENCE * (1 - score / 1000);
+  requestAnimationFrame(() => {
+    fill.style.strokeDashoffset = offset;
+  });
+
+  // Score number — count-up animation
+  const numEl = document.getElementById('scoreNum');
+  numEl.style.color = color;
+  let current = 0;
+  const duration = 1200;
+  const start = performance.now();
+  function tick(now) {
+    const t = Math.min((now - start) / duration, 1);
+    const ease = t < .5 ? 2*t*t : -1+(4-2*t)*t;
+    current = Math.round(ease * score);
+    numEl.textContent = current;
+    if (t < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // Badge
+  const badge = document.getElementById('verdictBadge');
+  badge.className = `verdict-badge ${verdict}`;
+  document.getElementById('verdictIcon').textContent = VERDICTS[verdict].icon;
+  document.getElementById('verdictText').textContent = verdict_mn;
+  document.getElementById('verdictDesc').textContent = VERDICTS[verdict].desc;
+  document.getElementById('verdictRatio').innerHTML =
+    `Зээл / цалингийн харьцаа: <strong>${ratio}x</strong>`;
+
+  // Probability bars
+  setTimeout(() => {
+    setBar('barApproved', 'pctApproved', proba.approved);
+    setBar('barManual',   'pctManual',   proba.manual_review);
+    setBar('barRejected', 'pctRejected', proba.rejected);
+  }, 200);
+
+  result.classList.add('show');
+  result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function setBar(barId, pctId, value) {
+  document.getElementById(barId).style.width = value + '%';
+  document.getElementById(pctId).textContent = value + '%';
+}
+</script>
+</body>
+</html>
